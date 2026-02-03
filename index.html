@@ -273,6 +273,19 @@
       Sensores → Gateway IoT → Nube → Reglas → Actuadores.
       Simulación local: genera lecturas, evalúa reglas y registra eventos (telemetría, alertas y comandos).
     </p>
+    <p>
+      Resumen general de la simulación IoT (finca)
+
+      La simulación representa un flujo IoT típico en una finca mixta (cultivo + ganadería): <br><br>
+
+      1. Sensores capturan telemetría (humedad de suelo, temperatura, lluvia, tanque, pH, batería). <br>
+      2. Un gateway recibe/normaliza y “envía” (simulado) a la nube. <br>
+      3. Un motor de reglas decide acciones (actuadores) en modo Automático. <br>
+      4. Actuadores ejecutan acciones: riego, ventilación, bomba, dosificador. <br>
+      5. Se generan eventos: telemetría, alertas y comandos. <br><br>
+
+      En modo Manual, los actuadores se pueden encender/apagar, pero con bloqueos mínimos de seguridad (p. ej. no activar riego si llueve, y no activar cargas con batería crítica).
+    </p>
   </div>
   <div class="pill">
     <span id="netDot" class="dot"></span>
