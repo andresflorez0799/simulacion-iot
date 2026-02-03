@@ -135,3 +135,21 @@ Es ideal como **configuración base productiva**, y desde aquí puedes:
 
 * Subir umbrales → enfoque más **conservador/protector**
 * Bajarlos → enfoque más **ahorrador**
+
+
+## Conclusiones generales al manipular rangos
+
+1. **Los umbrales definen la “sensibilidad” del sistema.**
+   Umbrales más exigentes (más altos o rangos más estrechos) hacen que el sistema **actúe más**, con más eventos, consumo y ciclos.
+2. **Histéresis evita el “parpadeo” ON/OFF**, pero igual puedes generar ciclos si el umbral queda muy agresivo.
+   * Riego usa **umbral + 6** para apagar.
+   * Ventilación usa **umbral - 2** para apagar.
+   * Bomba usa **umbral + 18** para apagar.
+3. **Riego y bomba están acoplados**: si subes el umbral de humedad, el riego se usa más ⇒ el tanque cae ⇒ la bomba se usa más.
+   Un ajuste “inocente” en humedad puede disparar el consumo de energía por la bomba.
+4. **La batería es el “freno de seguridad”.**
+   Con batería baja, el sistema apaga actuadores (y en manual bloquea ON), lo que puede dejarte sin riego/ventilación/bombeo aunque los umbrales lo pidan.
+5. **Mejor práctica:** ajustar umbrales en parejas (humedad ↔ tanque ↔ batería), no aislados.
+   * Subes humedad ⇒ revisa tanque mínimo y batería.
+   * Bajas temperatura ⇒ revisa batería/energía disponible.
+
