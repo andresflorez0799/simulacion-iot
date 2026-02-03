@@ -1,6 +1,6 @@
 ## Demostracion
 
-<a href="[https://www.google.com](https://andresflorez0799.github.io/simulacion-iot/)" target="_blank" rel="noopener noreferrer">Visitar link para ver Demostración:</a>
+<a href="https://andresflorez0799.github.io/simulacion-iot/" target="_blank" rel="noopener noreferrer">Click aqui para visitar Demostración:</a>
 
 ### Resumen general de la simulación IoT (finca)
 
