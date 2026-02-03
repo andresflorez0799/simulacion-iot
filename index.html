@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Simulación IoT – Finca (Cultivos + Ganadería)</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#121a2c;
+      --muted:#94a3b8;
+      --text:#e5e7eb;
+      --good:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --accent:#84BD00;
+      --accent2:#DB1D5B;
+      --line:#22304d;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(1100px 700px at 20% -10%, rgba(132,189,0,.18), transparent 60%),
+                  radial-gradient(900px 600px at 110% 10%, rgba(219,29,91,.14), transparent 50%),
+                  var(--bg);
+      color:var(--text);
+      font-family:var(--sans);
+    }
+    header{
+      padding:20px 18px 10px;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      backdrop-filter: blur(8px);
+      position:sticky;
+      top:0;
+      z-index:10;
+      background: rgba(11,18,32,.72);
+    }
+    .title{
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .title h1{margin:0; font-size:18px; letter-spacing:.2px;}
+    .title p{margin:0; color:var(--muted); font-size:12px; max-width:720px;}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border:1px solid rgba(255,255,255,.10);
+      border-radius:999px; background:rgba(18,26,44,.7);
+      box-shadow: var(--shadow);
+      font-size:12px; color:var(--muted);
+      white-space:nowrap;
+    }
+    .dot{
+      width:9px; height:9px; border-radius:50%;
+      background: var(--good);
+      box-shadow: 0 0 0 4px rgba(34,197,94,.12);
+    }
+    .dot.off{background:var(--bad); box-shadow:0 0 0 4px rgba(239,68,68,.12);}
+    main{
+      padding:16px 18px 26px;
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:14px;
+    }
+    @media (max-width: 980px){
+      main{grid-template-columns:1fr}
+      header{position:relative}
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:14px;
+      align-content:start;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card h2{
+      margin:0;
+      padding:12px 14px;
+      font-size:13px;
+      letter-spacing:.2px;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+    }
+    .card .content{padding:12px 14px;}
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.15);
+      color:var(--muted);
+      font-size:11px;
+    }
+    .badge strong{color:var(--text); font-weight:600;}
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width:680px){
+      .kpis{grid-template-columns:1fr}
+    }
+    .kpi{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(18,26,44,.55);
+    }
+    .kpi .label{font-size:11px; color:var(--muted); margin-bottom:6px;}
+    .kpi .value{font-size:22px; font-weight:700; letter-spacing:.2px;}
+    .kpi .sub{font-size:11px; color:var(--muted); margin-top:6px;}
+    .row{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      padding:10px 0;
+      border-bottom:1px dashed rgba(255,255,255,.08);
+    }
+    .row:last-child{border-bottom:none; padding-bottom:0;}
+    .row .left{display:flex; flex-direction:column; gap:4px;}
+    .row .name{font-size:12px;}
+    .row .meta{font-size:11px; color:var(--muted); font-family:var(--mono);}
+    .state{
+      display:flex; align-items:center; gap:8px;
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.16);
+    }
+    .state .s-dot{width:8px;height:8px;border-radius:50%; background:var(--good);}
+    .state.off .s-dot{background:var(--bad);}
+    .state.warn .s-dot{background:var(--warn);}
+    .controls{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width:680px){.controls{grid-template-columns:1fr}}
+    .control{
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(18,26,44,.55);
+      border-radius:14px;
+      padding:10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .control label{font-size:11px; color:var(--muted)}
+    input[type="range"]{width:100%;}
+    input[type="number"]{
+      width:100%;
+      padding:9px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      outline:none;
+    }
+    .btns{display:flex; gap:8px; flex-wrap:wrap;}
+    button{
+      cursor:pointer;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(18,26,44,.75);
+      color:var(--text);
+      padding:9px 10px;
+      font-size:12px;
+      transition:.15s transform, .15s opacity;
+    }
+    button:hover{transform:translateY(-1px);}
+    button:active{transform:translateY(0); opacity:.9;}
+    button.primary{
+      border-color: rgba(132,189,0,.55);
+      box-shadow:0 0 0 4px rgba(132,189,0,.12);
+    }
+    button.danger{
+      border-color: rgba(239,68,68,.55);
+      box-shadow:0 0 0 4px rgba(239,68,68,.10);
+    }
+    button.pink{
+      border-color: rgba(219,29,91,.55);
+      box-shadow:0 0 0 4px rgba(219,29,91,.10);
+    }
+    .log{
+      font-family:var(--mono);
+      font-size:11px;
+      color:rgba(229,231,235,.9);
+      line-height:1.4;
+      max-height:420px;
+      overflow:auto;
+      padding:12px 14px;
+    }
+    .log .line{
+      padding:6px 0;
+      border-bottom:1px dashed rgba(255,255,255,.07);
+    }
+    .log .line:last-child{border-bottom:none}
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.22);
+      color:var(--muted);
+      margin-right:8px;
+      font-size:10px;
+    }
+    .tag.ok{color:rgba(34,197,94,.95); border-color: rgba(34,197,94,.25);}
+    .tag.warn{color:rgba(245,158,11,.95); border-color: rgba(245,158,11,.25);}
+    .tag.bad{color:rgba(239,68,68,.95); border-color: rgba(239,68,68,.25);}
+    .diagram{
+      padding:12px 14px 14px;
+    }
+    .pipe{
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap:10px;
+      align-items:stretch;
+    }
+    @media (max-width:980px){.pipe{grid-template-columns:1fr}}
+    .node{
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      padding:10px;
+      background:rgba(18,26,44,.55);
+      min-height:88px;
+      position:relative;
+    }
+    .node h3{margin:0 0 6px; font-size:12px;}
+    .node p{margin:0; font-size:11px; color:var(--muted); line-height:1.35}
+    .arrow{
+      display:flex; align-items:center; justify-content:center;
+      color:rgba(148,163,184,.75);
+      font-size:18px;
+      user-select:none;
+    }
+    .node .mini{
+      position:absolute; right:10px; top:10px;
+      font-size:10px; color:var(--muted);
+      padding:2px 7px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.18);
+    }
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width:680px){.split{grid-template-columns:1fr}}
+    .hint{font-size:11px; color:var(--muted); margin-top:8px; line-height:1.35;}
+  </style>
+</head>
+<body>
+<header>
+  <div class="title">
+    <h1>Simulación IoT – Finca (Cultivos + Ganadería)</h1>
+    <p>
+      Sensores → Gateway IoT → Nube → Reglas → Actuadores.
+      Simulación local: genera lecturas, evalúa reglas y registra eventos (telemetría, alertas y comandos).
+    </p>
+  </div>
+  <div class="pill">
+    <span id="netDot" class="dot"></span>
+    <span id="netText">Conectado</span>
+    <span style="opacity:.35">|</span>
+    <span>Modo: <strong id="modeText">Automático</strong></span>
+    <span style="opacity:.35">|</span>
+    <span>Tick: <strong id="tickText">—</strong></span>
+  </div>
+</header>
+
+<main>
+  <!-- IZQUIERDA -->
+  <section class="grid">
+    <div class="card" style="grid-column: span 12;">
+      <h2>
+        Dashboard (KPIs)
+        <span class="badge">Ubicación: <strong>Finca La Esperanza</strong> · Zona <strong>Mixta</strong> (cultivo + corral)</span>
+      </h2>
+      <div class="content">
+        <div class="kpis">
+          <div class="kpi">
+            <div class="label">Humedad suelo (prom.)</div>
+            <div class="value" id="kpiHum">--%</div>
+            <div class="sub">Umbral riego: <span id="kpiHumThr">--%</span></div>
+          </div>
+          <div class="kpi">
+            <div class="label">Nivel tanque</div>
+            <div class="value" id="kpiTank">--%</div>
+            <div class="sub">Bomba: <span id="kpiPump">—</span></div>
+          </div>
+          <div class="kpi">
+            <div class="label">Estado general</div>
+            <div class="value" id="kpiHealth">—</div>
+            <div class="sub">Alertas activas: <span id="kpiAlerts">0</span></div>
+          </div>
+        </div>
+        <div class="hint">
+          Tip: juega con los umbrales de humedad / temperatura. En modo automático, el sistema encenderá riego, ventilación o bomba según reglas.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column: span 7;">
+      <h2>
+        Sensores (telemetría)
+        <span class="badge">Frecuencia: <strong>1s</strong> (simulada)</span>
+      </h2>
+      <div class="content" id="sensorList"></div>
+    </div>
+
+    <div class="card" style="grid-column: span 5;">
+      <h2>
+        Actuadores (comandos)
+        <span class="badge">Origen: <strong>Reglas / Manual</strong></span>
+      </h2>
+      <div class="content" id="actuatorList"></div>
+    </div>
+
+    <div class="card" style="grid-column: span 12;">
+      <h2>
+        Flujo IoT (conceptual)
+        <span class="badge">Eventos: <strong>telemetría</strong> · <strong>alertas</strong> · <strong>acciones</strong></span>
+      </h2>
+      <div class="diagram">
+        <div class="pipe">
+          <div class="node">
+            <div class="mini">EDGE</div>
+            <h3>1) Sensores en campo</h3>
+            <p>Humedad, temp., lluvia, pH, nivel de tanque, batería.</p>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="node">
+            <div class="mini">GATEWAY</div>
+            <h3>2) Gateway IoT</h3>
+            <p>Normaliza datos, aplica validaciones básicas, envía paquetes.</p>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="node">
+            <div class="mini">CLOUD</div>
+            <h3>3) Nube/Plataforma</h3>
+            <p>Almacena telemetría, motor de reglas, dashboards y notificaciones.</p>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="node">
+            <div class="mini">ACT</div>
+            <h3>4) Actuadores</h3>
+            <p>Riego, ventilación, bomba, dosificador de fertilizante.</p>
+          </div>
+        </div>
+        <div class="split" style="margin-top:12px;">
+          <div class="node">
+            <h3>Reglas típicas (cultivos)</h3>
+            <p>
+              • Humedad baja ⇒ encender riego<br/>
+              • Lluvia detectada ⇒ apagar riego<br/>
+              • pH fuera de rango ⇒ alerta y dosificación controlada
+            </p>
+          </div>
+          <div class="node">
+            <h3>Reglas típicas (ganadería)</h3>
+            <p>
+              • Temperatura alta en corral ⇒ activar ventilación<br/>
+              • Tanque bajo ⇒ activar bomba (si hay energía)<br/>
+              • Batería baja ⇒ modo ahorro y alerta
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DERECHA -->
+  <aside class="grid">
+    <div class="card" style="grid-column: span 12;">
+      <h2>
+        Configuración y reglas
+        <span class="badge">Motor: <strong>if/else</strong> (simulado)</span>
+      </h2>
+      <div class="content">
+        <div class="controls">
+          <div class="control">
+            <label>Modo de operación</label>
+            <div class="btns">
+              <button class="primary" id="btnAuto">Automático</button>
+              <button id="btnManual">Manual</button>
+              <button class="pink" id="btnToggleNet">Conectividad: ON/OFF</button>
+            </div>
+            <div class="hint">En modo manual, puedes encender/apagar actuadores sin reglas automáticas.</div>
+          </div>
+
+          <div class="control">
+            <label>Umbral humedad suelo (%) → Riego ON si baja de</label>
+            <input type="range" min="10" max="60" value="28" id="thrHum"/>
+            <div class="meta" id="thrHumText"></div>
+          </div>
+
+          <div class="control">
+            <label>Umbral temperatura (°C) → Ventilación ON si supera</label>
+            <input type="range" min="22" max="42" value="33" id="thrTemp"/>
+            <div class="meta" id="thrTempText"></div>
+          </div>
+
+          <div class="control">
+            <label>Nivel tanque mínimo (%) → Bomba ON si baja de</label>
+            <input type="range" min="10" max="60" value="25" id="thrTank"/>
+            <div class="meta" id="thrTankText"></div>
+          </div>
+
+          <div class="control">
+            <label>Rango pH ideal (cultivo)</label>
+            <div style="display:flex; gap:8px;">
+              <div style="flex:1">
+                <input type="number" step="0.1" min="4" max="9" value="5.8" id="phMin"/>
+                <div class="hint">Mín</div>
+              </div>
+              <div style="flex:1">
+                <input type="number" step="0.1" min="4" max="9" value="6.8" id="phMax"/>
+                <div class="hint">Máx</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="control">
+            <label>Simulación: “clima” (afecta lluvia y humedad)</label>
+            <div class="btns">
+              <button id="btnDry">Sequía</button>
+              <button id="btnNormal" class="primary">Normal</button>
+              <button id="btnRainy">Lluvioso</button>
+            </div>
+            <div class="hint">Ajusta la tendencia de humedad y probabilidad de lluvia.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column: span 12;">
+      <h2>
+        Eventos (Gateway/Nube)
+        <span class="badge">Log en tiempo real</span>
+      </h2>
+      <div class="log" id="log"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+(function(){
+  // --- Estado global ---
+  const state = {
+    tick: 0,
+    connected: true,
+    mode: "AUTO", // AUTO | MANUAL
+    climate: "NORMAL", // DRY | NORMAL | RAINY
+    thresholds: {
+      hum: 28,
+      temp: 33,
+      tank: 25
+    },
+    phIdeal: { min: 5.8, max: 6.8 },
+    sensors: {
+      soilHum: 34,      // %
+      airTemp: 29.5,    // °C
+      rain: 0,          // 0/1
+      tank: 62,         // %
+      soilPH: 6.3,      // pH
+      battery: 86       // %
+    },
+    actuators: {
+      irrigation: false,
+      ventilation: false,
+      pump: false,
+      fertDose: false
+    },
+    alerts: []
+  };
+
+  // --- Helpers ---
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const fmt = (n, d=0) => Number(n).toFixed(d);
+  const now = () => new Date().toLocaleTimeString();
+
+  function log(tag, level, msg){
+    const el = $("log");
+    const line = document.createElement("div");
+    line.className = "line";
+    const cls = level === "OK" ? "ok" : level === "WARN" ? "warn" : "bad";
+    line.innerHTML = `<span class="tag ${cls}">${tag}</span>${now()} · ${msg}`;
+    el.prepend(line);
+    // Limitar líneas
+    while(el.children.length > 120) el.removeChild(el.lastChild);
+  }
+
+  function setConnectivity(on){
+    state.connected = on;
+    $("netDot").className = "dot" + (on ? "" : " off");
+    $("netText").textContent = on ? "Conectado" : "Sin conexión";
+    log("NET", on ? "OK" : "WARN", on ? "Gateway enlazado a la nube." : "Gateway offline: se almacenan eventos localmente (simulado).");
+  }
+
+  function setMode(mode){
+    state.mode = mode;
+    $("modeText").textContent = (mode === "AUTO") ? "Automático" : "Manual";
+    $("btnAuto").classList.toggle("primary", mode==="AUTO");
+    $("btnManual").classList.toggle("primary", mode==="MANUAL");
+    log("MODE", "OK", `Modo cambiado a ${mode === "AUTO" ? "AUTOMÁTICO" : "MANUAL"}.`);
+  }
+
+  function setClimate(cl){
+    state.climate = cl;
+    $("btnDry").classList.toggle("primary", cl==="DRY");
+    $("btnNormal").classList.toggle("primary", cl==="NORMAL");
+    $("btnRainy").classList.toggle("primary", cl==="RAINY");
+    log("CLIMA", "OK", `Tendencia de clima: ${cl === "DRY" ? "SEQUÍA" : cl === "RAINY" ? "LLUVIOSO" : "NORMAL"}.`);
+  }
+
+  // --- Render de listas (sensores / actuadores) ---
+  function sensorRow(label, value, meta, status){
+    const sClass = status === "OFF" ? "state off" : status === "WARN" ? "state warn" : "state";
+    return `
+      <div class="row">
+        <div class="left">
+          <div class="name">${label}</div>
+          <div class="meta">${meta}</div>
+        </div>
+        <div class="${sClass}">
+          <span class="s-dot"></span>
+          <span>${value}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function actuatorRow(key, label, on, detail){
+    const cls = on ? "state" : "state off";
+    const btns = (state.mode === "MANUAL")
+      ? `
+        <div class="btns">
+          <button ${on ? "" : 'class="primary"'} data-act="${key}" data-cmd="ON">ON</button>
+          <button ${on ? 'class="danger"' : ""} data-act="${key}" data-cmd="OFF">OFF</button>
+        </div>
+      `
+      : `<div class="hint">Controlado por reglas automáticas</div>`;
+
+    return `
+      <div class="row" style="align-items:flex-start;">
+        <div class="left">
+          <div class="name">${label}</div>
+          <div class="meta">${detail}</div>
+          <div style="margin-top:8px;">${btns}</div>
+        </div>
+        <div class="${cls}">
+          <span class="s-dot"></span>
+          <span>${on ? "ON" : "OFF"}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function render(){
+    // Sensores
+    const S = state.sensors;
+
+    // Estados (para “semáforo”)
+    const humWarn = (S.soilHum < state.thresholds.hum);
+    const tempWarn = (S.airTemp > state.thresholds.temp);
+    const tankWarn = (S.tank < state.thresholds.tank);
+    const phWarn = (S.soilPH < state.phIdeal.min || S.soilPH > state.phIdeal.max);
+    const battWarn = (S.battery < 20);
+
+    const sensorsHtml =
+      sensorRow("Humedad de suelo", `${fmt(S.soilHum)}%`,
+        `thr=${state.thresholds.hum}% · zona=cultivo`, humWarn ? "WARN" : "OK") +
+      sensorRow("Temperatura ambiente (corral/invernadero)", `${fmt(S.airTemp,1)}°C`,
+        `thr=${state.thresholds.temp}°C · zona=ganadería`, tempWarn ? "WARN" : "OK") +
+      sensorRow("Lluvia", S.rain ? "Sí" : "No",
+        `detección=pluviómetro`, S.rain ? "WARN" : "OK") +
+      sensorRow("Nivel del tanque", `${fmt(S.tank)}%`,
+        `thr=${state.thresholds.tank}% · agua para riego/bebederos`, tankWarn ? "WARN" : "OK") +
+      sensorRow("pH del suelo", `${fmt(S.soilPH,1)}`,
+        `ideal=${fmt(state.phIdeal.min,1)}–${fmt(state.phIdeal.max,1)} · cultivo`, phWarn ? "WARN" : "OK") +
+      sensorRow("Batería (panel/UPS gateway)", `${fmt(S.battery)}%`,
+        `modo ahorro < 20%`, battWarn ? "WARN" : "OK");
+
+    $("sensorList").innerHTML = sensorsHtml;
+
+    // Actuadores
+    const A = state.actuators;
+    const actuatorsHtml =
+      actuatorRow("irrigation", "Riego (válvula principal)", A.irrigation,
+        "Acción: hidratar cultivo cuando la humedad cae") +
+      actuatorRow("ventilation", "Ventilación (corral/invernadero)", A.ventilation,
+        "Acción: reducir estrés térmico en animales") +
+      actuatorRow("pump", "Bomba de agua (tanque/pozo)", A.pump,
+        "Acción: mantener nivel mínimo para riego y bebederos") +
+      actuatorRow("fertDose", "Dosificador fertilizante", A.fertDose,
+        "Acción: corrección controlada por alerta de pH (simulada)");
+
+    $("actuatorList").innerHTML = actuatorsHtml;
+
+    // KPIs
+    $("kpiHum").textContent = `${fmt(S.soilHum)}%`;
+    $("kpiHumThr").textContent = `${state.thresholds.hum}%`;
+    $("kpiTank").textContent = `${fmt(S.tank)}%`;
+    $("kpiPump").textContent = A.pump ? "ON" : "OFF";
+
+    // Salud
+    const alerts = buildAlerts();
+    $("kpiAlerts").textContent = String(alerts.length);
+    $("kpiHealth").textContent =
+      alerts.length === 0 ? "OK" : alerts.length <= 2 ? "ALERTA" : "CRÍTICO";
+
+    // Tick
+    $("tickText").textContent = String(state.tick);
+
+    // Textos de sliders
+    $("thrHumText").textContent = `Actual: ${state.thresholds.hum}%`;
+    $("thrTempText").textContent = `Actual: ${state.thresholds.temp}°C`;
+    $("thrTankText").textContent = `Actual: ${state.thresholds.tank}%`;
+  }
+
+  function buildAlerts(){
+    const S = state.sensors;
+    const alerts = [];
+    if (S.soilHum < state.thresholds.hum) alerts.push("Humedad baja en cultivo");
+    if (S.airTemp > state.thresholds.temp) alerts.push("Temperatura alta en corral");
+    if (S.tank < state.thresholds.tank) alerts.push("Tanque bajo");
+    if (S.rain) alerts.push("Lluvia detectada");
+    if (S.soilPH < state.phIdeal.min || S.soilPH > state.phIdeal.max) alerts.push("pH fuera de rango");
+    if (S.battery < 20) alerts.push("Batería baja (modo ahorro)");
+    state.alerts = alerts;
+    return alerts;
+  }
+
+  // --- Simulación de sensores ---
+  function updateSensors(){
+    const S = state.sensors;
+
+    // Probabilidad de lluvia según clima
+    const rainChance = state.climate === "RAINY" ? 0.28 : state.climate === "DRY" ? 0.03 : 0.10;
+    const willRain = Math.random() < rainChance;
+    S.rain = willRain ? 1 : 0;
+
+    // Temperatura: oscila y se eleva con sequía, baja con lluvia
+    const tempDrift = (Math.random() * 0.7 - 0.25);
+    const climateBias = state.climate === "DRY" ? 0.18 : state.climate === "RAINY" ? -0.18 : 0.0;
+    S.airTemp = clamp(S.airTemp + tempDrift + climateBias, 18, 44);
+
+    // Humedad: baja con calor, sube con lluvia y riego
+    let humDelta = -(S.airTemp - 25) * 0.08;           // más calor → seca
+    humDelta += (S.rain ? 2.2 : 0);                    // lluvia sube
+    humDelta += (state.actuators.irrigation ? 1.8 : 0);// riego sube
+    humDelta += (state.climate === "DRY" ? -0.5 : 0);
+    humDelta += (Math.random() * 0.6 - 0.3);           // ruido
+    S.soilHum = clamp(S.soilHum + humDelta, 5, 85);
+
+    // Tanque: baja si hay riego, sube si bomba ON
+    let tankDelta = 0;
+    tankDelta -= (state.actuators.irrigation ? 1.2 : 0);
+    tankDelta -= 0.2; // consumo base para bebederos / pérdidas
+    tankDelta += (state.actuators.pump ? 1.6 : 0);
+    S.tank = clamp(S.tank + tankDelta, 0, 100);
+
+    // pH: cambia lentamente; dosificación intenta corregir hacia ideal
+    const idealMid = (state.phIdeal.min + state.phIdeal.max) / 2;
+    let phDelta = (Math.random() * 0.08 - 0.04);
+    if (state.actuators.fertDose){
+      phDelta += (idealMid - S.soilPH) * 0.08; // corrección suave
+    }
+    S.soilPH = clamp(S.soilPH + phDelta, 4.2, 8.6);
+
+    // Batería: cae con actuadores y si no hay lluvia (simulación simplista)
+    let battDelta = -0.15; // consumo base gateway
+    battDelta -= (state.actuators.pump ? 0.35 : 0);
+    battDelta -= (state.actuators.irrigation ? 0.18 : 0);
+    battDelta -= (state.actuators.ventilation ? 0.22 : 0);
+    // supongamos panel “recarga” un poco con clima normal/lluvioso
+    battDelta += (state.climate === "DRY" ? 0.04 : 0.09);
+    S.battery = clamp(S.battery + battDelta, 0, 100);
+  }
+
+  // --- Motor de reglas (AUTO) ---
+  function applyRules(){
+    if (state.mode !== "AUTO") return;
+
+    const S = state.sensors;
+    const A = state.actuators;
+
+    // Si no hay conectividad, se permite seguir en modo “edge rules”
+    // (simula que el gateway igual controla actuadores localmente).
+    const context = state.connected ? "cloud+edge" : "edge-only";
+
+    // RIEGO:
+    // - Si llueve → apagar riego
+    // - Si humedad < umbral y tanque > 10 y batería > 10 → encender
+    // - Si humedad >= (umbral + 6) → apagar (histéresis)
+    if (S.rain){
+      if (A.irrigation){
+        A.irrigation = false;
+        log("ACT", "WARN", `Riego OFF (lluvia detectada) [${context}]`);
+      }
+    } else {
+      if (!A.irrigation && S.soilHum < state.thresholds.hum && S.tank > 10 && S.battery > 10){
+        A.irrigation = true;
+        log("ACT", "OK", `Riego ON (humedad ${fmt(S.soilHum)}% < ${state.thresholds.hum}%) [${context}]`);
+      }
+      if (A.irrigation && S.soilHum >= state.thresholds.hum + 6){
+        A.irrigation = false;
+        log("ACT", "OK", `Riego OFF (humedad recuperada: ${fmt(S.soilHum)}%) [${context}]`);
+      }
+    }
+
+    // VENTILACIÓN (corral):
+    // - Temp > umbral y batería > 10 → ON
+    // - Temp < (umbral - 2) → OFF
+    if (!A.ventilation && S.airTemp > state.thresholds.temp && S.battery > 10){
+      A.ventilation = true;
+      log("ACT", "OK", `Ventilación ON (temp ${fmt(S.airTemp,1)}°C > ${state.thresholds.temp}°C) [${context}]`);
+    }
+    if (A.ventilation && S.airTemp < state.thresholds.temp - 2){
+      A.ventilation = false;
+      log("ACT", "OK", `Ventilación OFF (temp bajó a ${fmt(S.airTemp,1)}°C) [${context}]`);
+    }
+
+    // BOMBA (tanque):
+    // - Si tanque < umbral y batería > 12 → ON
+    // - Si tanque > (umbral + 18) → OFF
+    if (!A.pump && S.tank < state.thresholds.tank && S.battery > 12){
+      A.pump = true;
+      log("ACT", "OK", `Bomba ON (tanque ${fmt(S.tank)}% < ${state.thresholds.tank}%) [${context}]`);
+    }
+    if (A.pump && S.tank > state.thresholds.tank + 18){
+      A.pump = false;
+      log("ACT", "OK", `Bomba OFF (tanque subió a ${fmt(S.tank)}%) [${context}]`);
+    }
+
+    // DOSIFICADOR fertilizante (por pH):
+    // - Si pH fuera de rango → alerta + encender dosificación por 3 ticks
+    const phOut = (S.soilPH < state.phIdeal.min || S.soilPH > state.phIdeal.max);
+    if (phOut && !A.fertDose){
+      A.fertDose = true;
+      A._fertTicks = 3;
+      log("ALERT", "WARN", `pH fuera de rango (${fmt(S.soilPH,1)}). Dosificación controlada iniciada. [${context}]`);
+    }
+    if (A.fertDose){
+      A._fertTicks = (A._fertTicks ?? 0) - 1;
+      if (A._fertTicks <= 0){
+        A.fertDose = false;
+        log("ACT", "OK", `Dosificación OFF (ciclo completado). [${context}]`);
+      }
+    }
+
+    // MODO AHORRO por batería
+    if (S.battery < 10){
+      // priorizar seguridad: apagar actuadores no críticos
+      if (A.ventilation){ A.ventilation = false; log("ACT", "WARN", "Ventilación OFF por batería crítica (<10%)."); }
+      if (A.irrigation){ A.irrigation = false; log("ACT", "WARN", "Riego OFF por batería crítica (<10%)."); }
+      // bomba también se apaga si batería crítica
+      if (A.pump){ A.pump = false; log("ACT", "WARN", "Bomba OFF por batería crítica (<10%)."); }
+    }
+  }
+
+  // --- Envío de telemetría (simulado) ---
+  function sendTelemetry(){
+    const S = state.sensors;
+    const payload = {
+      tick: state.tick,
+      soilHum: +fmt(S.soilHum),
+      airTemp: +fmt(S.airTemp,1),
+      rain: S.rain,
+      tank: +fmt(S.tank),
+      soilPH: +fmt(S.soilPH,1),
+      battery: +fmt(S.battery),
+      mode: state.mode
+    };
+
+    // Si no hay red, se “almacena local” (solo log)
+    if (state.connected){
+      log("TEL", "OK", `Telemetría enviada a nube: ${JSON.stringify(payload)}`);
+    } else {
+      log("TEL", "WARN", `Telemetría guardada en gateway (offline): ${JSON.stringify(payload)}`);
+    }
+  }
+
+  // --- Manual commands ---
+  function manualCommand(actKey, cmd){
+    if (state.mode !== "MANUAL") return;
+
+    const A = state.actuators;
+    const desired = (cmd === "ON");
+
+    // Reglas mínimas de seguridad incluso en manual
+    if (actKey === "irrigation" && desired && state.sensors.rain){
+      log("SAFE", "WARN", "Bloqueado: no se enciende riego mientras llueve.");
+      return;
+    }
+    if ((actKey === "pump" || actKey === "irrigation" || actKey === "ventilation") && desired && state.sensors.battery < 10){
+      log("SAFE", "WARN", "Bloqueado: batería crítica (<10%).");
+      return;
+    }
+    A[actKey] = desired;
+    log("MAN", "OK", `Comando manual: ${actKey} → ${cmd}`);
+  }
+
+  // --- Bind UI ---
+  $("btnAuto").addEventListener("click", () => setMode("AUTO"));
+  $("btnManual").addEventListener("click", () => setMode("MANUAL"));
+  $("btnToggleNet").addEventListener("click", () => setConnectivity(!state.connected));
+
+  $("thrHum").addEventListener("input", (e) => { state.thresholds.hum = +e.target.value; render(); });
+  $("thrTemp").addEventListener("input", (e) => { state.thresholds.temp = +e.target.value; render(); });
+  $("thrTank").addEventListener("input", (e) => { state.thresholds.tank = +e.target.value; render(); });
+
+  $("phMin").addEventListener("input", (e) => { state.phIdeal.min = clamp(+e.target.value, 4, 9); render(); });
+  $("phMax").addEventListener("input", (e) => { state.phIdeal.max = clamp(+e.target.value, 4, 9); render(); });
+
+  $("btnDry").addEventListener("click", () => setClimate("DRY"));
+  $("btnNormal").addEventListener("click", () => setClimate("NORMAL"));
+  $("btnRainy").addEventListener("click", () => setClimate("RAINY"));
+
+  // Delegación para botones manuales de actuadores
+  document.addEventListener("click", (e) => {
+    const t = e.target;
+    if (t && t.dataset && t.dataset.act){
+      manualCommand(t.dataset.act, t.dataset.cmd);
+      render();
+    }
+  });
+
+  // --- Loop principal ---
+  function loop(){
+    state.tick++;
+    updateSensors();
+    applyRules();
+    sendTelemetry();
+    render();
+  }
+
+  // Init
+  setConnectivity(true);
+  setMode("AUTO");
+  setClimate("NORMAL");
+  render();
+  log("SYS", "OK", "Simulación iniciada. Ajusta umbrales o cambia a modo MANUAL para enviar comandos.");
+
+  setInterval(loop, 1000);
+})();
+</script>
+</body>
+</html>
