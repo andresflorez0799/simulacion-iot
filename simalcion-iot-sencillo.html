@@ -1,0 +1,202 @@
+@ -0,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Primer Microcontrolador - CUN</title>
+    <style>
+        :root {
+            --cun-verde: #00A34D;
+            --cun-gris: #333333;
+            --light-bg: #f8f9fa;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--light-bg); margin: 0; padding: 20px; color: var(--cun-gris); }
+        
+        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 10px solid var(--cun-verde); }
+
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+        .header h1 { color: var(--cun-verde); margin: 0; font-size: 28px; }
+        .header p { font-style: italic; color: #666; }
+
+        .intro-box { background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 5px solid var(--cun-verde); }
+
+        .simulation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+
+        .card { background: #fff; border: 1px solid #ddd; padding: 20px; border-radius: 10px; }
+        .card h2 { font-size: 18px; color: var(--cun-verde); margin-top: 0; }
+
+        /* Controles */
+        .sensor-ui { margin-bottom: 20px; }
+        .sensor-ui label { display: block; margin-bottom: 10px; font-weight: bold; }
+        input[type="range"] { width: 100%; height: 10px; border-radius: 5px; accent-color: var(--cun-verde); }
+
+        /* Microcontrolador Visual */
+        .mcu-visual { background: #2c3e50; padding: 25px; border-radius: 15px; color: white; text-align: center; }
+        .component-status { display: flex; justify-content: space-around; margin-top: 20px; }
+        
+        .indicator { text-align: center; }
+        .bulb { width: 50px; height: 50px; background: #444; border-radius: 50%; margin: 0 auto 10px; border: 3px solid #fff; transition: 0.3s; }
+        
+        /* Estados de los Actuadores */
+        .on-fire { background: #ff4757; box-shadow: 0 0 20px #ff4757; } /* Ventilador */
+        .on-water { background: #1e90ff; box-shadow: 0 0 20px #1e90ff; } /* Riego */
+        .on-sun { background: #ffa502; box-shadow: 0 0 20px #ffa502; } /* Luz */
+
+        .explanation { font-size: 14px; margin-top: 15px; background: #f1f1f1; padding: 10px; border-radius: 5px; color: #333; min-height: 60px; }
+
+        .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #aaa; border-top: 1px solid #eee; padding-top: 20px; }
+        .green { background: #2ecc71 ; box-shadow: 0 0 15px #2ecc71; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Sistemas Integrados: Aprendiendo de forma Fácil</h1>
+        <p>Corporación Unificada Nacional de Educación Superior - CUN</p>
+    </div>
+
+    <div class="intro-box">
+        <strong>¿Qué estamos haciendo?</strong> <br>
+        Estamos simulando un <strong>Invernadero Inteligente</strong>. Tu misión es usar los "Sentidos" (Sensores) para que el "Cerebro" (Microcontrolador) active los "Músculos" (Actuadores) cuando el cultivo lo necesite.
+    </div>
+
+    <div class="simulation-grid">
+        <!-- LADO IZQUIERDO: SENSORES -->
+        <div class="card">
+            <h2>1. Ajusta los Sensores (Sentidos)</h2>
+            <div class="sensor-ui">
+                <label>🌡️ Temperatura: <span id="tTxt">20</span>°C</label>
+                <input type="range" id="tSlider" min="0" max="50" value="20">
+                <p><small>Si hace mucho calor (>30°C), necesitamos aire.</small></p>
+            </div>
+            
+            <div class="sensor-ui">
+                <label>💧 Humedad del Suelo: <span id="hTxt">60</span>%</label>
+                <input type="range" id="hSlider" min="0" max="100" value="60">
+                <p><small>Si la tierra está seca (<30%), hay que regar.</small></p>
+            </div>
+
+            <div class="sensor-ui">
+                <label>☁️ Luz Solar: <span id="lTxt">700</span> Lux</label>
+                <input type="range" id="lSlider" min="0" max="1000" value="700">
+                <p><small>Si oscurece (<400 Lux), encendemos luces.</small></p>
+            </div>
+        </div>
+
+        <!-- LADO DERECHO: MICROCONTROLADOR -->
+        <div class="card">
+            <h2>2. Respuesta del Cerebro (Microcontrolador)</h2>
+            <div class="mcu-visual">
+                <p>ESTADO DE LOS ACTUADORES</p>
+                <div class="component-status">
+                    <div class="indicator">
+                        <div id="actVentilador" class="bulb"></div>
+                        <small>Ventilador</small>
+                    </div>
+                    <div class="indicator">
+                        <div id="actRiego" class="bulb"></div>
+                        <small>Bomba Agua</small>
+                    </div>
+                    <div class="indicator">
+                        <div id="actLuz" class="bulb"></div>
+                        <small>Luz LED</small>
+                    </div>
+                </div>
+            </div>
+            <div class="explanation" id="msg">
+                El sistema está operando normalmente.
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <h2>Respuestas:</h2>
+        <h3>3). A qué valor se activa cada respuesta (luz, riego o ventilador).?</h3>
+        <ul>
+            <li>Ventilador: <span style="font-weight: 700;">Temperatura >= 31</span></li>
+            <li>Bomba Agua: <span style="font-weight: 700;">Humedad <= 29</span></li>
+            <li>Luz LED: <span style="font-weight: 700;">Luz <= 399</span></li>
+        </ul>
+        <h3>4). Conclusiones generales:</h3>
+        <p>Considerando lo anterior quiere decir, que las condiciones optimas o para que se encuentre <span style="font-weight: 700;color: var(--cun-verde)">"ESTABLE"</span> la temperatura 
+            debe ser <= 30 grados, la humedad del suelo debe ser >= 30% y la luz solar debe ser >= 400 Lux.
+        </p>
+    </div>
+
+    <div class="footer">
+        © 2024 CUN - Programa de Formación Transversal | Diseñado para Estudiantes
+    </div>
+</div>
+
+<script>
+    const tSlider = document.getElementById('tSlider');
+    const hSlider = document.getElementById('hSlider');
+    const lSlider = document.getElementById('lSlider');
+
+    const tTxt = document.getElementById('tTxt');
+    const hTxt = document.getElementById('hTxt');
+    const lTxt = document.getElementById('lTxt');
+
+    const actVentilador = document.getElementById('actVentilador');
+    const actRiego = document.getElementById('actRiego');
+    const actLuz = document.getElementById('actLuz');
+    const msg = document.getElementById('msg');
+
+    function procesarCerebro() {
+        let temp = tSlider.value;
+        let hum = hSlider.value;
+        let luz = lSlider.value;
+
+        tTxt.innerText = temp;
+        hTxt.innerText = hum;
+        lTxt.innerText = luz;
+
+        let acciones = [];
+
+        // Lógica de pensamiento del microcontrolador
+        if(temp > 30) {
+            actVentilador.classList.add('on-fire');
+            actVentilador.classList.remove('green');
+            acciones.push("Encendí el ventilador porque hace calor.");
+        } else {
+            actVentilador.classList.remove('on-fire');
+            actVentilador.classList.add('green');
+        }
+
+        if(hum < 30) {
+            actRiego.classList.add('on-water');
+            actRiego.classList.remove('green');
+            acciones.push("Activé el riego porque la tierra está seca.");
+        } else {
+            actRiego.classList.remove('on-water');
+            actRiego.classList.add('green');
+        }
+
+        if(luz < 400) {
+            actLuz.classList.add('on-sun');
+            actLuz.classList.remove('green');
+            acciones.push("Prendí las luces porque está muy oscuro.");
+        } else {
+            actLuz.classList.remove('on-sun');
+            actLuz.classList.add('green');
+        }
+
+        if(acciones.length === 0) {
+            msg.innerHTML = "🌱 Todas las condiciones son óptimas. El microcontrolador está en espera.";
+        } else {
+            msg.innerHTML = "🤖 <strong>El cerebro decidió:</strong> " + acciones.join(" ");
+        }
+    }
+
+    tSlider.addEventListener('input', procesarCerebro);
+    hSlider.addEventListener('input', procesarCerebro);
+    lSlider.addEventListener('input', procesarCerebro);
+
+    procesarCerebro(); // Inicializar
+</script>
+
+</body>
+</html>
