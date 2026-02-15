@@ -1,3 +1,12 @@
+# IoT
+El Internet de las Cosas (IoT) es básicamente una manera de hacer que los objetos del mundo real "hablen" con sistemas digitales. Lo podemos imaginar como una cadena donde cada pieza tiene su función.
+Todo arranca con los sensores, que son como los sentidos del sistema: miden cosas como temperatura, movimiento, luz o consumo de energía. No deciden nada, solo recopilan información constantemente.
+Esa información viaja hasta un gateway, que vendría a ser el "mensajero" que recibe los datos, los organiza y los manda de forma segura a internet o a un servidor central.
+Una vez ahí, un motor de reglas analiza todo y toma decisiones automáticas según lo que se haya programado. Por ejemplo: si la temperatura sube demasiado, el sistema enciende un ventilador sin que nadie tenga que hacer nada.
+Esas decisiones las ejecutan los actuadores o dispositivos que hacen cosas físicas: encender o apagar equipos, abrir válvulas, activar alarmas, etc. Si los sensores "ven", los actuadores "actúan".
+Y para que todo funcione de forma coordinada, el sistema usa telemetría, alertas y comandos: la telemetría monitorea el estado de los equipos en todo momento, las alertas avisan cuando algo importante pasa, y los comandos permiten controlar el sistema de forma remota.
+En resumen, el IoT crea un ciclo que nunca para: mide, transmite, analiza, decide y actúa, todo de forma automática. Eso lo hace muy útil en sectores como la agricultura, la industria, la salud o las ciudades inteligentes.
+
 ## Demostracion
 
 <a href="https://andresflorez0799.github.io/simulacion-iot/" target="_blank" rel="noopener noreferrer">Click aqui para visitar Demostración:</a>
